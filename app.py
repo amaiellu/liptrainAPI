@@ -28,6 +28,7 @@ if 'APPINSIGHTS_KEY' in os.environ:
 api = Api(app)
 parser = reqparse.RequestParser()
 parser.add_argument('SentenceText')
+parser.add_argument('email')
 
 # Implement singleton to avoid global objects
 class ConnectionManager(object):    
@@ -140,3 +141,46 @@ class Sentences(Queryable):
 # Create API routes
 api.add_resource(Sentence, '/sentence', '/sentence/<sentence_id>')
 api.add_resource(Sentences, '/sentences')
+
+
+
+class User(Queryable):
+    def get(self, user_id):     
+        user= {}
+        debugpy.breakpoint()
+        user['UserId'] = json.loads(user_id)
+        result = self.executeQueryJson("get", user)   
+        return result, 200
+    
+    def put(self):
+        debugpy.breakpoint()
+        user={}
+        args = parser.parse_args()
+        user['email'] = args['email']
+        result = self.executeQueryJson("put", user)
+        return result, 201
+
+    def patch(self, user_id):
+        debugpy.breakpoint()
+        args = parser.parse_args()
+        user={}
+        user['UserId']=json.loads(user_id)
+        user["email"] = args['email']           
+        result = self.executeQueryJson("patch", user)
+        return result, 202
+
+    def delete(self, user_id):
+        debugpy.breakpoint()       
+        user = {}
+        user["UserId"] = user_id
+        result = self.executeQueryJson("delete", user)
+        return result, 203
+
+# users Class
+class Users(Queryable):
+    def get(self):     
+        result = self.executeQueryJson("get")   
+        return result, 200
+
+api.add_resource(User, '/user', '/user/<user_id>')
+api.add_resource(Users, '/users')
