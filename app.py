@@ -184,3 +184,52 @@ class Users(Queryable):
 
 api.add_resource(User, '/user', '/user/<user_id>')
 api.add_resource(Users, '/users')
+
+
+    
+# Create Video API 
+
+
+class Video(Queryable):
+    def get(self, video_id):     
+        video= {}
+        debugpy.breakpoint()
+        video['VideoId'] = json.loads(video_id)
+        result = self.executeQueryJson("get", video)   
+        return result, 200
+    
+    def put(self):
+        debugpy.breakpoint()
+        video={}
+        args = parser.parse_args()
+        video['UserId'] = args['UserId']
+        video['SentenceId']=args['SentenceId']
+        video['StoragePath']=args['StoragePath']
+        result = self.executeQueryJson("put", video)
+        return result, 201
+
+    def patch(self, video_id):
+        debugpy.breakpoint()
+        args = parser.parse_args()
+        video={}
+        video['videoId']=json.loads(video_id)
+        for arg in args: 
+            video[arg] = args[arg]           
+        result = self.executeQueryJson("patch", video)
+        return result, 202
+
+    def delete(self, video_id):
+        debugpy.breakpoint()       
+        video = {}
+        video["videoId"] = video_id
+        result = self.executeQueryJson("delete", video)
+        return result, 203
+
+# videos Class
+class Videos(Queryable):
+    def get(self):     
+        result = self.executeQueryJson("get")   
+        return result, 200
+
+api.add_resource(Video, '/video', '/video/<video_id>')
+api.add_resource(Videos, '/videos')
