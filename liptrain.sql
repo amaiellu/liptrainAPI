@@ -1,127 +1,3 @@
-*/
-IF SCHEMA_ID('web') IS NULL BEGIN	
-	EXECUTE('CREATE SCHEMA [web]');
-END
-GO
-
-IF USER_ID('restAPI') IS NULL BEGIN	
-	CREATE USER [restAPI] WITH PASSWORD = '8s0v0AYIB7o';	
-END
-
-/*
-	Grant execute permission to created users
-*/
-GRANT EXECUTE ON SCHEMA::[web] TO [restAPI];
-GO
-
-/*
-	Return details on a specific sentence
-*/
-CREATE OR ALTER PROCEDURE web.get_sentence
-@Json NVARCHAR(MAX)
-AS
-SET NOCOUNT ON;
-DECLARE @SentenceId INT = JSON_VALUE(@Json, '$.SentenceId');
-SELECT 
-	[SentenceId], 
-	[SentenceText] 	
-FROM 
-	[Sentence] 
-WHERE 
-	[SentenceID] = @SentenceId
-FOR JSON PATH
-GO
-
-/*
-	Delete a specific customer
-*/
-CREATE OR ALTER PROCEDURE web.delete_sentence
-@Json NVARCHAR(MAX)
-AS
-SET NOCOUNT ON;
-DECLARE @SentenceId INT = JSON_VALUE(@Json, '$.SentenceID');
-DELETE FROM [Sentence] WHERE SentenceId = @SentenceId;
-SELECT * FROM (SELECT SentenceId = @SentenceId) D FOR JSON AUTO;
-GO
-
-/*
-	Update (Patch) a specific customer
-*/
-CREATE OR ALTER PROCEDURE web.patch_sentence
-@Json NVARCHAR(MAX)
-AS
-SET NOCOUNT ON;
-DECLARE @SentenceId INT = JSON_VALUE(@Json, '$.SentenceID');
-WITH [source] AS 
-(
-	SELECT * FROM OPENJSON(@Json) WITH (
-		[SentenceID] INT, 
-		[SentenceText] NVARCHAR(256)
-			)
-)
-UPDATE
-	t
-SET
-	t.[SentenceText] = COALESCE(s.[SentenceText], t.[SentenceText])
-FROM
-	[Sentence] t
-INNER JOIN
-	[source] s ON t.[SentenceId] = s.[SentenceId]
-WHERE
-	t.SentenceId = @SentenceId;
-
-DECLARE @Json2 NVARCHAR(MAX) = N'{"SentenceId": ' + CAST(@SentenceId AS NVARCHAR(9)) + N'}'
-EXEC web.get_sentence @Json2;
-GO
-
-/*
-	Create a new sentence
-*/
-
-CREATE OR ALTER PROCEDURE web.put_sentence
-@Json NVARCHAR(MAX)
-AS
-SET NOCOUNT ON;
-DECLARE @SentenceId INT = NEXT VALUE FOR Sentence.SentenceId;
-WITH [source] AS 
-(
-	SELECT * FROM OPENJSON(@Json) WITH (		
-		[SentenceText] NVARCHAR(256) 
-			)
-)
-INSERT INTO [Sentence] 
-(
-	SentenceID, 
-	SentenceText 	
-	
-)
-
-SELECT
-	@SentenceId, 
-	SentenceText 
-FROM
-	[source]
-;
-
-
-DECLARE @Json2 NVARCHAR(MAX) = N'{"SentenceID": ' + CAST(@SentenceId AS NVARCHAR(9)) + N'}'
-EXEC web.get_sentence @Json2;
-GO
-
-CREATE OR ALTER PROCEDURE web.get_sentences
-AS
-SET NOCOUNT ON;
--- Cast is needed to corretly inform pyodbc of output type is NVARCHAR(MAX)
--- Needed if generated json is bigger then 4000 bytes and thus pyodbc trucates it
--- https://stackoverflow.com/questions/49469301/pyodbc-truncates-the-response-of-a-sql-server-for-json-query
-SELECT CAST((
-	SELECT 
-		[SentenceId], 
-		[SentenceText]
-	FROM 
-		[Sentence] 
-	FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
-GO
 /*
 	Create schema
 */
@@ -358,4 +234,151 @@ SELECT CAST((
 	FROM 
 		[Person] 
 	FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+
+/*
+	Return details on a specific video
+*/
+CREATE OR ALTER PROCEDURE web.get_video
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+DECLARE @VideoId INT = JSON_VALUE(@Json, '$.VideoId');
+SELECT 
+	[VideoId], 
+	[PersonId],
+	[SentenceId],
+	[StoragePath]
+FROM 
+	[Video] 
+WHERE 
+	[VideoId] = @VideoId
+FOR JSON PATH
+GO
+
+
+/*
+	Delete a specific video
+*/
+CREATE OR ALTER PROCEDURE web.delete_video
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+DECLARE @VideoId INT = JSON_VALUE(@Json, '$.VideoId');
+DELETE FROM [Video] WHERE VideoId = @VideoId;
+SELECT * FROM (SELECT VideoId = @VideoId) D FOR JSON AUTO;
+GO
+
+/*
+	Edit existing Video
+*/
+
+CREATE OR ALTER PROCEDURE web.patch_video
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+DECLARE @VideoId INT = JSON_VALUE(@Json, '$.VideoId');
+WITH [source] AS 
+(
+	SELECT * FROM OPENJSON(@Json) WITH (
+		[VideoId] INT, 
+		[UserId] INT,
+		[SentenceId] INT,
+		[StoragePath] NVARCHAR(256)
+			)
+		 
+)
+
+
+UPDATE
+	t
+SET
+	t.[PersonId] = COALESCE(s.[UserId], t.[PersonId]),
+	t.[SentenceId]= COALESCE(s.[SentenceId],t.[SentenceId]),
+	t.[StoragePath]=COALESCE(s.[StoragePath],t.[StoragePath])
+FROM
+	[Video] t
+INNER JOIN
+	[source] s ON t.[VideoId] = s.[VideoId]
+WHERE
+	t.VideoId = @VideoId;
+
+DECLARE @Json2 NVARCHAR(MAX) = N'{"VideoId": ' + CAST(@VideoId AS NVARCHAR(9)) + N'}'
+EXEC web.get_user @Json2;
+GO
+
+/*
+	Add a new video
+*/
+
+CREATE OR ALTER PROCEDURE web.put_video
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+DECLARE @StoragePath NVARCHAR = JSON_VALUE(@Json, '$.StoragePath');
+WITH [source] AS 
+(
+	SELECT * FROM OPENJSON(@Json) WITH (		
+		[UserId] INT,
+		[SentenceId] INT,
+		[StoragePath] NVARCHAR(256)
+			)
+)
+INSERT INTO [Video] 
+( 
+	PersonId,
+	SentenceId,
+	StoragePath
+	
+)
+
+SELECT
+	UserId,
+	SentenceId,
+	StoragePath
+FROM
+	[source]
+;
+
+DECLARE @UserId INT = (SELECT VideoId FROM Video WHERE StoragePath=@StoragePath)
+DECLARE @Json2 NVARCHAR(MAX) = N'{"UserID": ' + CAST(@UserId AS NVARCHAR(9)) + N'}'
+EXEC web.get_user @Json2;
+GO
+
+
+
+CREATE OR ALTER PROCEDURE web.get_videos
+AS
+SET NOCOUNT ON;
+-- Cast is needed to corretly inform pyodbc of output type is NVARCHAR(MAX)
+-- Needed if generated json is bigger then 4000 bytes and thus pyodbc trucates it
+-- https://stackoverflow.com/questions/49469301/pyodbc-truncates-the-response-of-a-sql-server-for-json-query
+SELECT CAST((
+	SELECT 
+		[PersonId], 
+		[SentenceId],
+		[StoragePath]
+	FROM 
+		[Video] 
+	FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_userbyemail
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+SET CONCAT_NULL_YIELDS_NULL OFF;
+DECLARE @email NVARCHAR(256) = JSON_VALUE(@Json, '$.email');
+PRINT @email
+SELECT ISNULL(CAST((
+SELECT
+	[PersonId],
+	[Email],
+	[DateJoined]
+FROM
+	[Person]
+WHERE
+	[Email]=@email
+FOR JSON PATH) AS NVARCHAR(MAX)),'{}') AS JsonResult
 GO

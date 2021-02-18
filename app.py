@@ -4,7 +4,7 @@ import debugpy
 import json
 import pyodbc
 import socket
-from flask import Flask
+from flask import Flask,jsonify, request
 from flask_restful import reqparse, abort, Api, Resource
 from threading import Lock
 from tenacity import *
@@ -29,6 +29,9 @@ api = Api(app)
 parser = reqparse.RequestParser()
 parser.add_argument('SentenceText')
 parser.add_argument('email')
+parser.add_argument('UserId')
+parser.add_argument('SentenceId')
+parser.add_argument('StoragePath')
 
 # Implement singleton to avoid global objects
 class ConnectionManager(object):    
@@ -178,12 +181,22 @@ class User(Queryable):
 
 # users Class
 class Users(Queryable):
-    def get(self):     
+    def get(self):
+        debugpy.breakpoint()
         result = self.executeQueryJson("get")   
         return result, 200
 
+class UserByEmail(Queryable):
+    def get(self):
+        debugpy.breakpoint()
+        email={}
+        email['email'] = request.args.get('email')
+        result=self.executeQueryJson("get",email)
+        return result,200
+
 api.add_resource(User, '/user', '/user/<user_id>')
 api.add_resource(Users, '/users')
+api.add_resource(UserByEmail,'/email')
 
 
     
@@ -212,16 +225,21 @@ class Video(Queryable):
         debugpy.breakpoint()
         args = parser.parse_args()
         video={}
-        video['videoId']=json.loads(video_id)
+        video['VideoId']=json.loads(video_id)
         for arg in args: 
-            video[arg] = args[arg]           
+            val=args[arg]
+            if val!=None:
+                if arg=='StoragePath':
+                    video[arg]=val
+                else:
+                    video[arg] = json.loads(val)         
         result = self.executeQueryJson("patch", video)
         return result, 202
 
     def delete(self, video_id):
         debugpy.breakpoint()       
         video = {}
-        video["videoId"] = video_id
+        video["VideoId"] = video_id
         result = self.executeQueryJson("delete", video)
         return result, 203
 
