@@ -76,14 +76,32 @@ DECLARE @Json2 NVARCHAR(MAX) = N'{"SentenceId": ' + CAST(@SentenceId AS NVARCHAR
 EXEC web.get_sentence @Json2;
 GO
 
+CREATE OR ALTER PROCEDURE web.get_sentencebytext
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON 
+DECLARE @SentenceText NVARCHAR(256) = JSON_VALUE(@Json, '$.SentenceText')
+SELECT 
+	[SentenceId], 
+	[SentenceText] 	
+FROM 
+	[Sentence] 
+WHERE 
+	[SentenceText] = @SentenceText
+FOR JSON PATH
+GO
+
+
 /*
 	Create a new sentence
 */
+
 
 CREATE OR ALTER PROCEDURE web.put_sentence
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
+DECLARE @SentenceText NVARCHAR(256) = JSON_VALUE(@Json,'$.SentenceText'); 
 WITH [source] AS 
 (
 	SELECT * FROM OPENJSON(@Json) WITH (		
@@ -102,10 +120,12 @@ FROM
 
 ;
 
-
-DECLARE @Json2 NVARCHAR(MAX) = N'{"SentenceID": "This is a sentence"' + N'}'
-EXEC web.get_sentence @Json2;
+DECLARE @Json2 NVARCHAR(MAX) = N'{"SentenceText":"' +@SentenceText + N'"}';
+PRINT @Json2
+EXEC web.get_sentencebytext @Json2;
 GO
+
+
 
 CREATE OR ALTER PROCEDURE web.get_sentences
 AS
@@ -193,7 +213,8 @@ CREATE OR ALTER PROCEDURE web.put_user
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-DECLARE @email NVARCHAR = JSON_VALUE(@Json, '$.email')
+DECLARE @email NVARCHAR(256) = JSON_VALUE(@Json, '$.email')
+PRINT @email
 DECLARE @DateJoined DATE = GETDATE();
 WITH [source] AS 
 (
@@ -215,9 +236,9 @@ FROM
 	[source]
 ;
 
-DECLARE @UserId INT = (SELECT PersonId FROM Person WHERE Email=@email)
-DECLARE @Json2 NVARCHAR(MAX) = N'{"UserID": ' + CAST(@UserId AS NVARCHAR(9)) + N'}'
-EXEC web.get_user @Json2;
+DECLARE @Json2 NVARCHAR(MAX) = N'{"email":"' + CAST(@email AS NVARCHAR) + N'"}'
+PRINT @Json2
+EXEC web.get_userbyemail @Json2;
 GO
 
 CREATE OR ALTER PROCEDURE web.get_users
@@ -305,18 +326,41 @@ WHERE
 	t.VideoId = @VideoId;
 
 DECLARE @Json2 NVARCHAR(MAX) = N'{"VideoId": ' + CAST(@VideoId AS NVARCHAR(9)) + N'}'
-EXEC web.get_user @Json2;
+EXEC web.get_video @Json2;
 GO
 
 /*
 	Add a new video
 */
 
+CREATE OR ALTER PROCEDURE web.get_videobystorage
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+DECLARE @StoragePath NVARCHAR(MAX) = JSON_VALUE(@Json, '$.StoragePath');
+SELECT 
+	[VideoId], 
+	[PersonId],
+	[SentenceId],
+	[StoragePath]
+FROM 
+	[Video] 
+WHERE 
+	[StoragePath] = @StoragePath
+FOR JSON PATH
+GO
+
+
+
+
+
+
+
 CREATE OR ALTER PROCEDURE web.put_video
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-DECLARE @StoragePath NVARCHAR = JSON_VALUE(@Json, '$.StoragePath');
+DECLARE @StoragePath NVARCHAR(MAX) = JSON_VALUE(@Json, '$.StoragePath');
 WITH [source] AS 
 (
 	SELECT * FROM OPENJSON(@Json) WITH (		
@@ -341,9 +385,8 @@ FROM
 	[source]
 ;
 
-DECLARE @UserId INT = (SELECT VideoId FROM Video WHERE StoragePath=@StoragePath)
-DECLARE @Json2 NVARCHAR(MAX) = N'{"UserID": ' + CAST(@UserId AS NVARCHAR(9)) + N'}'
-EXEC web.get_user @Json2;
+DECLARE @Json2 NVARCHAR(MAX) = N'{"StoragePath":"' + @StoragePath + N'"}'
+EXEC web.get_videobystorage @Json2;
 GO
 
 
@@ -370,7 +413,6 @@ AS
 SET NOCOUNT ON;
 SET CONCAT_NULL_YIELDS_NULL OFF;
 DECLARE @email NVARCHAR(256) = JSON_VALUE(@Json, '$.email');
-PRINT @email
 SELECT ISNULL(CAST((
 SELECT
 	[PersonId],
