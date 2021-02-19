@@ -11,7 +11,7 @@ IF USER_ID('restAPI') IS NULL BEGIN
 END
 
 /*
-	Grant execute permission to created users
+	Grant execute permission to created persons
 */
 GRANT EXECUTE ON SCHEMA::[web] TO [restAPI];
 GO
@@ -145,13 +145,13 @@ GO
 
 
 /*
-	Return details on a specific user
+	Return details on a specific person
 */
-CREATE OR ALTER PROCEDURE web.get_user
+CREATE OR ALTER PROCEDURE web.get_person
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-DECLARE @PersonId INT = JSON_VALUE(@Json, '$.UserId');
+DECLARE @PersonId INT = JSON_VALUE(@Json, '$.PersonId');
 SELECT 
 	[PersonId], 
 	[Email],
@@ -164,29 +164,29 @@ FOR JSON PATH
 GO
 
 /*
-	Delete a specific user
+	Delete a specific person
 */
-CREATE OR ALTER PROCEDURE web.delete_user
+CREATE OR ALTER PROCEDURE web.delete_person
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-DECLARE @UserId INT = JSON_VALUE(@Json, '$.UserId');
-DELETE FROM [Person] WHERE PersonId = @UserId;
-SELECT * FROM (SELECT UserId = @UserId) D FOR JSON AUTO;
+DECLARE @PersonId INT = JSON_VALUE(@Json, '$.PersonId');
+DELETE FROM [Person] WHERE PersonId = @PersonId;
+SELECT * FROM (SELECT PersonId = @PersonId) D FOR JSON AUTO;
 GO
 
 /*
-	Update (Patch) a specific user
+	Update (Patch) a specific person
 */
-CREATE OR ALTER PROCEDURE web.patch_user
+CREATE OR ALTER PROCEDURE web.patch_person
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-DECLARE @UserId INT = JSON_VALUE(@Json, '$.UserId');
+DECLARE @PersonId INT = JSON_VALUE(@Json, '$.PersonId');
 WITH [source] AS 
 (
 	SELECT * FROM OPENJSON(@Json) WITH (
-		[UserId] INT, 
+		[PersonId] INT, 
 		[email] NVARCHAR(256)
 			)
 )
@@ -197,19 +197,19 @@ SET
 FROM
 	[Person] t
 INNER JOIN
-	[source] s ON t.[PersonId] = s.[UserId]
+	[source] s ON t.[PersonId] = s.[PersonId]
 WHERE
-	t.PersonId = @UserId;
+	t.PersonId = @PersonId;
 
-DECLARE @Json2 NVARCHAR(MAX) = N'{"UserId": ' + CAST(@UserId AS NVARCHAR(9)) + N'}'
-EXEC web.get_user @Json2;
+DECLARE @Json2 NVARCHAR(MAX) = N'{"PersonId": ' + CAST(@PersonId AS NVARCHAR(9)) + N'}'
+EXEC web.get_person @Json2;
 GO
 
 /*
 	Create a new sentence
 */
 
-CREATE OR ALTER PROCEDURE web.put_user
+CREATE OR ALTER PROCEDURE web.put_person
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
@@ -238,10 +238,10 @@ FROM
 
 DECLARE @Json2 NVARCHAR(MAX) = N'{"email":"' + CAST(@email AS NVARCHAR) + N'"}'
 PRINT @Json2
-EXEC web.get_userbyemail @Json2;
+EXEC web.get_personbyemail @Json2;
 GO
 
-CREATE OR ALTER PROCEDURE web.get_users
+CREATE OR ALTER PROCEDURE web.get_persons
 AS
 SET NOCOUNT ON;
 -- Cast is needed to corretly inform pyodbc of output type is NVARCHAR(MAX)
@@ -304,7 +304,7 @@ WITH [source] AS
 (
 	SELECT * FROM OPENJSON(@Json) WITH (
 		[VideoId] INT, 
-		[UserId] INT,
+		[PersonId] INT,
 		[SentenceId] INT,
 		[StoragePath] NVARCHAR(256)
 			)
@@ -315,7 +315,7 @@ WITH [source] AS
 UPDATE
 	t
 SET
-	t.[PersonId] = COALESCE(s.[UserId], t.[PersonId]),
+	t.[PersonId] = COALESCE(s.[PersonId], t.[PersonId]),
 	t.[SentenceId]= COALESCE(s.[SentenceId],t.[SentenceId]),
 	t.[StoragePath]=COALESCE(s.[StoragePath],t.[StoragePath])
 FROM
@@ -364,7 +364,7 @@ DECLARE @StoragePath NVARCHAR(MAX) = JSON_VALUE(@Json, '$.StoragePath');
 WITH [source] AS 
 (
 	SELECT * FROM OPENJSON(@Json) WITH (		
-		[UserId] INT,
+		[PersonId] INT,
 		[SentenceId] INT,
 		[StoragePath] NVARCHAR(256)
 			)
@@ -378,7 +378,7 @@ INSERT INTO [Video]
 )
 
 SELECT
-	UserId,
+	PersonId,
 	SentenceId,
 	StoragePath
 FROM
@@ -407,7 +407,7 @@ SELECT CAST((
 	FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
 GO
 
-CREATE OR ALTER PROCEDURE web.get_userbyemail
+CREATE OR ALTER PROCEDURE web.get_personbyemail
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
@@ -423,4 +423,106 @@ FROM
 WHERE
 	[Email]=@email
 FOR JSON PATH) AS NVARCHAR(MAX)),'{}') AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_personsbysentence
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+SET CONCAT_NULL_YIELDS_NULL OFF;
+DECLARE @SentenceId NVARCHAR(256) = JSON_VALUE(@Json, '$.SentenceId');
+PRINT @SentenceId
+SELECT CAST((
+SELECT * FROM Person WHERE PersonId in (
+SELECT
+	[PersonId]
+FROM
+	[Video]
+WHERE
+	[SentenceId]=@SentenceId)
+FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_sentencesbyperson
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+SET CONCAT_NULL_YIELDS_NULL OFF;
+DECLARE @PersonId NVARCHAR(256) = JSON_VALUE(@Json, '$.PersonId');
+
+SELECT CAST((
+SELECT * FROM Sentence WHERE SentenceId in (
+SELECT
+	[SentenceId]
+FROM
+	[Video]
+WHERE
+	[PersonId]=@PersonId)
+FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_videosbysentence
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+SET CONCAT_NULL_YIELDS_NULL OFF;
+DECLARE @SentenceId INT = JSON_VALUE(@Json, '$.SentenceId');
+SELECT CAST((
+SELECT
+	[VideoId],
+	[PersonId],
+	[SentenceId],
+	[StoragePath]
+FROM
+	[Video]
+WHERE
+	[SentenceId]=@SentenceId
+FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_videosbyperson
+@Json NVARCHAR(MAX)
+AS
+SET NOCOUNT ON;
+SET CONCAT_NULL_YIELDS_NULL OFF;
+DECLARE @PersonId INT = JSON_VALUE(@Json, '$.PersonId');
+SELECT CAST((
+SELECT
+	[VideoId],
+	[PersonId],
+	[SentenceId],
+	[StoragePath]
+FROM
+	[Video]
+WHERE
+	[PersonId]=@PersonId
+FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+GO
+
+CREATE OR ALTER PROCEDURE web.get_sentencesbycount
+AS
+SET NOCOUNT ON;
+DECLARE @threshold INT = 3;
+SELECT CAST(( 
+
+SELECT
+	[SentenceId],
+	[SentenceText]
+FROM
+	[Sentence]
+WHERE 
+	[SentenceId]
+NOT IN (
+	SELECT 
+		[SentenceID]
+	FROM 
+		[Video]
+	GROUP BY
+		[SentenceId] 
+	HAVING
+		COUNT(*) >= @threshold
+)
+
+
+FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
 GO

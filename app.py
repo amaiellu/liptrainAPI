@@ -29,7 +29,7 @@ api = Api(app)
 parser = reqparse.RequestParser()
 parser.add_argument('SentenceText')
 parser.add_argument('email')
-parser.add_argument('UserId')
+parser.add_argument('PersonId')
 parser.add_argument('SentenceId')
 parser.add_argument('StoragePath')
 
@@ -140,53 +140,64 @@ class Sentences(Queryable):
     def get(self):     
         result = self.executeQueryJson("get")   
         return result, 200
-    
+
+class SentencesByPerson(Queryable):
+    def get(self,person_id):
+        person = {}
+        person["PersonId"] = person_id
+        result= self.executeQueryJson("get",person)
+        return result, 200
+
+class SentencesByCount(Queryable):
+    def get(self):
+        result=self.executeQueryJson("get")
+        return result, 200
 # Create API routes
 api.add_resource(Sentence, '/sentence', '/sentence/<sentence_id>')
 api.add_resource(Sentences, '/sentences')
+api.add_resource(SentencesByPerson,'/sentences/<person_id>')
+api.add_resource(SentencesByCount,'/count')
 
-
-
-class User(Queryable):
-    def get(self, user_id):     
-        user= {}
+class Person(Queryable):
+    def get(self, person_id):     
+        person= {}
         debugpy.breakpoint()
-        user['UserId'] = json.loads(user_id)
-        result = self.executeQueryJson("get", user)   
+        person['PersonId'] = json.loads(person_id)
+        result = self.executeQueryJson("get", person)   
         return result, 200
     
     def put(self):
         debugpy.breakpoint()
-        user={}
+        person={}
         args = parser.parse_args()
-        user['email'] = args['email']
-        result = self.executeQueryJson("put", user)
+        person['email'] = args['email']
+        result = self.executeQueryJson("put", person)
         return result, 201
 
-    def patch(self, user_id):
+    def patch(self, person_id):
         debugpy.breakpoint()
         args = parser.parse_args()
-        user={}
-        user['UserId']=json.loads(user_id)
-        user["email"] = args['email']           
-        result = self.executeQueryJson("patch", user)
+        person={}
+        person['PersonId']=json.loads(person_id)
+        person["email"] = args['email']           
+        result = self.executeQueryJson("patch", person)
         return result, 202
 
-    def delete(self, user_id):
+    def delete(self, person_id):
         debugpy.breakpoint()       
-        user = {}
-        user["UserId"] = user_id
-        result = self.executeQueryJson("delete", user)
+        person = {}
+        person["PersonId"] = person_id
+        result = self.executeQueryJson("delete", person)
         return result, 203
 
-# users Class
-class Users(Queryable):
+# persons Class
+class Persons(Queryable):
     def get(self):
         debugpy.breakpoint()
         result = self.executeQueryJson("get")   
         return result, 200
 
-class UserByEmail(Queryable):
+class PersonByEmail(Queryable):
     def get(self):
         debugpy.breakpoint()
         email={}
@@ -194,9 +205,17 @@ class UserByEmail(Queryable):
         result=self.executeQueryJson("get",email)
         return result,200
 
-api.add_resource(User, '/user', '/user/<user_id>')
-api.add_resource(Users, '/users')
-api.add_resource(UserByEmail,'/email')
+class PersonsBySentence(Queryable):
+    def get(self,sentence_id):
+        sentence={}
+        sentence['SentenceId']=json.loads(sentence_id)
+        result=self.executeQueryJson("get",sentence)
+        return result, 200
+
+api.add_resource(Person, '/person', '/person/<person_id>')
+api.add_resource(Persons, '/persons')
+api.add_resource(PersonByEmail,'/email')
+api.add_resource(PersonsBySentence,'/persons/sentence/<sentence_id>')
 
 
     
@@ -215,7 +234,7 @@ class Video(Queryable):
         debugpy.breakpoint()
         video={}
         args = parser.parse_args()
-        video['UserId'] = args['UserId']
+        video['PersonId'] = args['PersonId']
         video['SentenceId']=args['SentenceId']
         video['StoragePath']=args['StoragePath']
         result = self.executeQueryJson("put", video)
@@ -249,5 +268,23 @@ class Videos(Queryable):
         result = self.executeQueryJson("get")   
         return result, 200
 
+class VideosBySentence(Queryable):
+    def get(self,sentence_id):
+        sentence={}
+        sentence['SentenceId']=sentence_id
+        result=self.executeQueryJson("get",sentence)
+        return result,200
+
+class VideosByPerson(Queryable):
+    def get(self,person_id):
+        person={}
+        person['PersonId']=person_id
+        result=self.executeQueryJson("get",person)
+        return result, 200
+    
+
+
 api.add_resource(Video, '/video', '/video/<video_id>')
 api.add_resource(Videos, '/videos')
+api.add_resource(VideosBySentence,'/videos/sentences/<sentence_id>')
+api.add_resource(VideosByPerson,'/videos/persons/<person_id>')
