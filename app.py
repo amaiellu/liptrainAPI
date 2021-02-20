@@ -1,9 +1,7 @@
 import sys
 import os
-import debugpy
 import json
 import pyodbc
-import socket
 from flask import Flask,jsonify, request
 from flask_restful import reqparse, abort, Api, Resource
 from threading import Lock
@@ -276,7 +274,3 @@ api.add_resource(Video, '/video', '/video/<video_id>')
 api.add_resource(Videos, '/videos')
 api.add_resource(VideosBySentence,'/videos/sentences/<sentence_id>')
 api.add_resource(VideosByPerson,'/videos/persons/<person_id>')
-#test
-
-if __name__ == '__main__':
-    app.run()
