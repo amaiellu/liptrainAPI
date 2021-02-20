@@ -58,7 +58,6 @@ class ConnectionManager(object):
     def executeQueryJSON(self, procedure, payload=None):
         result = {}  
         try:
-            debugpy.breakpoint()
             conn = self.__getConnection()
 
             cursor = conn.cursor()
@@ -86,7 +85,6 @@ class ConnectionManager(object):
                 self.__removeConnection() 
                 raise 
         except:
-            debugpy.breakpoint()
             self.__removeConnection()
             cursor.close()
             raise
@@ -106,7 +104,6 @@ class Queryable(Resource):
 class Sentence(Queryable):
     def get(self, sentence_id):     
         sentence = {}
-        debugpy.breakpoint()
         sentence["SentenceId"] = sentence_id
         result = self.executeQueryJson("get", sentence) 
         result['videosURL']=f'/videos/sentences/{sentence_id}'
@@ -114,7 +111,6 @@ class Sentence(Queryable):
         return result, 200
     
     def put(self):
-        debugpy.breakpoint()
         sentence={}
         args = parser.parse_args()
         sentence['SentenceText'] = args['SentenceText']
@@ -122,7 +118,6 @@ class Sentence(Queryable):
         return result, 201
 
     def patch(self, sentence_id):
-        debugpy.breakpoint()
         args = parser.parse_args()
         sentence={}
         sentence['SentenceId']=json.loads(sentence_id)
@@ -130,8 +125,7 @@ class Sentence(Queryable):
         result = self.executeQueryJson("patch", sentence)
         return result, 202
 
-    def delete(self, sentence_id):
-        debugpy.breakpoint()       
+    def delete(self, sentence_id):      
         sentence = {}
         sentence["SentenceId"] = sentence_id
         result = self.executeQueryJson("delete", sentence)
@@ -163,7 +157,6 @@ api.add_resource(SentencesByCount,'/count')
 class Person(Queryable):
     def get(self, person_id):     
         person= {}
-        debugpy.breakpoint()
         person['PersonId'] = json.loads(person_id)
         result = self.executeQueryJson("get", person)
         result['sentencesURL']=f'/sentences/{person_id}'
@@ -171,7 +164,6 @@ class Person(Queryable):
         return result, 200
     
     def put(self):
-        debugpy.breakpoint()
         person={}
         args = parser.parse_args()
         person['email'] = args['email']
@@ -179,7 +171,6 @@ class Person(Queryable):
         return result, 201
 
     def patch(self, person_id):
-        debugpy.breakpoint()
         args = parser.parse_args()
         person={}
         person['PersonId']=json.loads(person_id)
@@ -187,8 +178,7 @@ class Person(Queryable):
         result = self.executeQueryJson("patch", person)
         return result, 202
 
-    def delete(self, person_id):
-        debugpy.breakpoint()       
+    def delete(self, person_id):    
         person = {}
         person["PersonId"] = person_id
         result = self.executeQueryJson("delete", person)
@@ -197,13 +187,11 @@ class Person(Queryable):
 # persons Class
 class Persons(Queryable):
     def get(self):
-        debugpy.breakpoint()
         result = self.executeQueryJson("get")   
         return result, 200
 
 class PersonByEmail(Queryable):
     def get(self):
-        debugpy.breakpoint()
         email={}
         email['email'] = request.args.get('email')
         result=self.executeQueryJson("get",email)
@@ -229,13 +217,11 @@ api.add_resource(PersonsBySentence,'/persons/sentence/<sentence_id>')
 class Video(Queryable):
     def get(self, video_id):     
         video= {}
-        debugpy.breakpoint()
         video['VideoId'] = json.loads(video_id)
         result = self.executeQueryJson("get", video)   
         return result, 200
     
     def put(self):
-        debugpy.breakpoint()
         video={}
         args = parser.parse_args()
         video['PersonId'] = args['PersonId']
@@ -245,7 +231,6 @@ class Video(Queryable):
         return result, 201
 
     def patch(self, video_id):
-        debugpy.breakpoint()
         args = parser.parse_args()
         video={}
         video['VideoId']=json.loads(video_id)
@@ -259,8 +244,7 @@ class Video(Queryable):
         result = self.executeQueryJson("patch", video)
         return result, 202
 
-    def delete(self, video_id):
-        debugpy.breakpoint()       
+    def delete(self, video_id):  
         video = {}
         video["VideoId"] = video_id
         result = self.executeQueryJson("delete", video)
