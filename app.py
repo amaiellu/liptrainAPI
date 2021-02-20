@@ -108,7 +108,9 @@ class Sentence(Queryable):
         sentence = {}
         debugpy.breakpoint()
         sentence["SentenceId"] = sentence_id
-        result = self.executeQueryJson("get", sentence)   
+        result = self.executeQueryJson("get", sentence) 
+        result['videosURL']=f'/videos/sentences/{sentence_id}'
+        result['personsURL']=f'/persons/sentence/{sentence_id}'
         return result, 200
     
     def put(self):
@@ -163,7 +165,9 @@ class Person(Queryable):
         person= {}
         debugpy.breakpoint()
         person['PersonId'] = json.loads(person_id)
-        result = self.executeQueryJson("get", person)   
+        result = self.executeQueryJson("get", person)
+        result['sentencesURL']=f'/sentences/{person_id}'
+        result['videosURL']=f'/videos/persons/{person_id}'   
         return result, 200
     
     def put(self):
