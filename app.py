@@ -276,3 +276,7 @@ api.add_resource(Video, '/video', '/video/<video_id>')
 api.add_resource(Videos, '/videos')
 api.add_resource(VideosBySentence,'/videos/sentences/<sentence_id>')
 api.add_resource(VideosByPerson,'/videos/persons/<person_id>')
+
+
+if __name__ == '__main__':
+    app.run()
