@@ -14,14 +14,14 @@ gitSource="https://github.com/amaiellu/liptrainAPI.git"
 
 if [[ -z "${SQLAZURECONNSTR_WWIF:-}" ]]; then
 	echo "Plase export Azure SQL connection string:";
-    echo "export SQLAZURECONNSTR_WWIF=\"DRIVER={ODBC Driver 17 for SQL Server};SERVER=liptrainserver.database.windows.net;DATABASE=liptrainDB;UID=restAPI;PWD=8s0v0AYIB7o\"";
+    echo "export SQLAZURECONNSTR_WWIF";
 	exit 1;
 fi
 
 echo "Creating Application Service Plan...";
 az appservice plan create \
     -g $resourceGroup \
-    -n "linux-plan" \
+    -n "liptrain-plan" \
     --sku S1 \
     --is-linux
 
@@ -39,7 +39,7 @@ echo "Creating Web Application...";
 az webapp create \
     -g $resourceGroup \
     -n $appName \
-    --plan "linux-plan" \
+    --plan "liptrain-plan" \
     --runtime "PYTHON|3.8" \
     --deployment-source-url $gitSource \
     --deployment-source-branch master
