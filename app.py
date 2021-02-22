@@ -1,5 +1,6 @@
 import sys
 import os
+import debugpy
 import json
 import pyodbc
 import socket
@@ -101,12 +102,14 @@ class Queryable(Resource):
 
 # sentence Class
 class Sentence(Queryable):
-    def get(self, sentence_id):     
+    def get(self, sentence_id):
+        debugpy.breakpoint()  
         sentence = {}
         sentence["SentenceId"] = sentence_id
-        result = self.executeQueryJson("get", sentence) 
-        result['videosURL']=f'/videos/sentences/{sentence_id}'
-        result['personsURL']=f'/persons/sentence/{sentence_id}'
+        result = self.executeQueryJson("get", sentence)
+        if len(result)>0:
+            result[0]['videosURL']=f'/videos/sentences/{sentence_id}'
+            result[0]['personsURL']=f'/persons/sentence/{sentence_id}'
         return result, 200
     
     def put(self):
@@ -154,12 +157,13 @@ api.add_resource(SentencesByPerson,'/sentences/<person_id>')
 api.add_resource(SentencesByCount,'/count')
 
 class Person(Queryable):
-    def get(self, person_id):     
+    def get(self, person_id):    
         person= {}
         person['PersonId'] = json.loads(person_id)
         result = self.executeQueryJson("get", person)
-        result['sentencesURL']=f'/sentences/{person_id}'
-        result['videosURL']=f'/videos/persons/{person_id}'   
+        if len(result)>0:
+            result[0]['sentencesURL']=f'/sentences/{person_id}'
+            result[0]['videosURL']=f'/videos/persons/{person_id}'   
         return result, 200
     
     def put(self):
@@ -264,6 +268,7 @@ class VideosBySentence(Queryable):
 
 class VideosByPerson(Queryable):
     def get(self,person_id):
+        debugpy.breakpoint()
         person={}
         person['PersonId']=person_id
         result=self.executeQueryJson("get",person)
