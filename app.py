@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import pyodbc
+import socket
 from flask import Flask,jsonify, request
 from flask_restful import reqparse, abort, Api, Resource
 from threading import Lock
