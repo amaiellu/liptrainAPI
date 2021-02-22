@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Make sure these values are correct for your environment
-resourceGroup="liraDev"
+resourceGroup="liRAdev"
 appName="liptrainAPI"
 location="EastUs" 
 
