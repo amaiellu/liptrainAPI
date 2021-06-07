@@ -1,6 +1,5 @@
 import sys
 import os
-import debugpy
 import json
 import pyodbc
 import socket
@@ -12,6 +11,7 @@ from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 from opencensus.trace.samplers import ProbabilitySampler
 import logging
+
 
 app = Flask(__name__)
 
@@ -102,14 +102,13 @@ class Queryable(Resource):
 
 # sentence Class
 class Sentence(Queryable):
-    def get(self, sentence_id):
-        debugpy.breakpoint()  
+    def get(self, sentence_id):  
         sentence = {}
         sentence["SentenceId"] = sentence_id
         result = self.executeQueryJson("get", sentence)
         if len(result)>0:
             result[0]['videosURL']=f'/videos/sentences/{sentence_id}'
-            result[0]['personsURL']=f'/persons/sentence/{sentence_id}'
+            result[0]['personsURL']=f'/persons/sentences/{sentence_id}'
         return result, 200
     
     def put(self):
@@ -182,6 +181,8 @@ class Person(Queryable):
         return result, 202
 
     def delete(self, person_id):    
+        import debugpy
+        debugpy.breakpoint()
         person = {}
         person["PersonId"] = person_id
         result = self.executeQueryJson("delete", person)
@@ -207,11 +208,31 @@ class PersonsBySentence(Queryable):
         result=self.executeQueryJson("get",sentence)
         return result, 200
 
+class PersonNextSentence(Queryable):
+    def get(self,person_id):
+        sentences_read=SentencesByPerson().get(person_id)
+        if sentences_read[1]!=200:
+            return sentences_read
+        else:
+            sentences_read=sentences_read[0]
+        
+        remaining_sentences=SentencesByCount().get()
+        if remaining_sentences[1]!=200:
+            return remaining_sentences
+        else:
+            remaining_sentences=remaining_sentences[0]
+        for sentence in remaining_sentences:
+            if sentence not in sentences_read:
+                result=sentence
+                return result,200
+            
+        return "Thank you for your help! There are currently no more required sentences. Check back later for more.",201
+
 api.add_resource(Person, '/person', '/person/<person_id>')
 api.add_resource(Persons, '/persons')
 api.add_resource(PersonByEmail,'/email')
-api.add_resource(PersonsBySentence,'/persons/sentence/<sentence_id>')
-
+api.add_resource(PersonsBySentence,'/persons/sentences/<sentence_id>')
+api.add_resource(PersonNextSentence,'/person/nextsentence/<person_id>')
 
     
 # Create Video API 
@@ -268,7 +289,6 @@ class VideosBySentence(Queryable):
 
 class VideosByPerson(Queryable):
     def get(self,person_id):
-        debugpy.breakpoint()
         person={}
         person['PersonId']=person_id
         result=self.executeQueryJson("get",person)
