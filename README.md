@@ -15,7 +15,7 @@ to install required packages.
 
 The structure of the database is as follows: 
 
-
+![image](https://user-images.githubusercontent.com/15605232/121098824-b048a380-c7c4-11eb-89f9-24ef5dcd7417.png)
 
 
 To connect with the database in SSMS and be able to query and view available data, use 
@@ -23,6 +23,12 @@ To connect with the database in SSMS and be able to query and view available dat
 servername: liradb-dev.database.windows.net
 user:
 password:
+
+Under options--> connection properties 
+
+database name: liptrainDB_Dev
+
+Please note that port 1433 needs to be accessible through any firewalls your connection is behind in order to connect to the database via ssms.
 
 Documentation for using ssms:
 
