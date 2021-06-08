@@ -21,8 +21,7 @@ The structure of the database is as follows:
 To connect with the database in SSMS and be able to query and view available data, use 
 
 servername: liradb-dev.database.windows.net
-user:
-password:
+username: liralogin
 
 Under options--> connection properties 
 
