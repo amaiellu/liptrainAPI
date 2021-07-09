@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python version
       uses: actions/setup-python@v1
       with:
-        python-version: '3.8'
+        python-version: '3.7'
 
     - name: Create and start virtual environment
       run: |
@@ -59,4 +59,4 @@ jobs:
         with:
           app-name: 'liptrainapi'
           slot-name: 'dev'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_d82d365f81ed46678b4406420dadf4bf }}
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_bbb485181a604c1b96e7970d5da0e4d6 }}
