@@ -7,7 +7,6 @@ from flask import Flask,jsonify, request
 from flask_restful import reqparse, abort, Api, Resource
 from threading import Lock
 from tenacity import *
-from operator import itemgetter
 from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 from opencensus.trace.samplers import ProbabilitySampler
@@ -222,8 +221,7 @@ class PersonNextSentence(Queryable):
             return remaining_sentences
         else:
             remaining_sentences=remaining_sentences[0]
-        priorities=sorted(remaining_sentences,key=itemgetter('Importance'),reverse=True)
-        for sentence in priorities:
+        for sentence in remaining_sentences:
             if sentence not in sentences_read:
                 result=sentence
                 return result,200
