@@ -239,7 +239,7 @@ api.add_resource(PersonNextSentence,'/person/nextsentence/<person_id>')
 
 
 class Video(Queryable):
-    def get(self, video_id):     
+    def get(self, video_id=1):     
         video= {}
         video['VideoId'] = json.loads(video_id)
         result = self.executeQueryJson("get", video)   
