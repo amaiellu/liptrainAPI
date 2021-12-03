@@ -26,7 +26,7 @@ SET NOCOUNT ON;
 DECLARE @SentenceId INT = JSON_VALUE(@Json, '$.SentenceId');
 SELECT 
 	[SentenceId], 
-	[SentenceText] 	
+	[SentenceText]
 FROM 
 	[Sentence] 
 WHERE 
@@ -83,7 +83,7 @@ SET NOCOUNT ON
 DECLARE @SentenceText NVARCHAR(256) = JSON_VALUE(@Json, '$.SentenceText')
 SELECT 
 	[SentenceId], 
-	[SentenceText] 	
+	[SentenceText]
 FROM 
 	[Sentence] 
 WHERE 
@@ -214,7 +214,6 @@ CREATE OR ALTER PROCEDURE web.put_person
 AS
 SET NOCOUNT ON;
 DECLARE @email NVARCHAR(256) = JSON_VALUE(@Json, '$.email')
-PRINT @email
 DECLARE @DateJoined DATE = GETDATE();
 WITH [source] AS 
 (
@@ -361,26 +360,30 @@ CREATE OR ALTER PROCEDURE web.put_video
 AS
 SET NOCOUNT ON;
 DECLARE @StoragePath NVARCHAR(MAX) = JSON_VALUE(@Json, '$.StoragePath');
+DECLARE @VidTime DATETIME = GETDATE();
 WITH [source] AS 
 (
 	SELECT * FROM OPENJSON(@Json) WITH (		
 		[PersonId] INT,
 		[SentenceId] INT,
 		[StoragePath] NVARCHAR(256)
+
 			)
 )
 INSERT INTO [Video] 
 ( 
 	PersonId,
 	SentenceId,
-	StoragePath
+	StoragePath,
+	VidTime
 	
 )
 
 SELECT
 	PersonId,
 	SentenceId,
-	StoragePath
+	StoragePath,
+	@VidTime
 FROM
 	[source]
 ;
@@ -399,6 +402,7 @@ SET NOCOUNT ON;
 -- https://stackoverflow.com/questions/49469301/pyodbc-truncates-the-response-of-a-sql-server-for-json-query
 SELECT CAST((
 	SELECT 
+		[VideoId],
 		[PersonId], 
 		[SentenceId],
 		[StoragePath]
@@ -447,10 +451,9 @@ CREATE OR ALTER PROCEDURE web.get_sentencesbyperson
 @Json NVARCHAR(MAX)
 AS
 SET NOCOUNT ON;
-SET CONCAT_NULL_YIELDS_NULL OFF;
 DECLARE @PersonId NVARCHAR(256) = JSON_VALUE(@Json, '$.PersonId');
 
-SELECT CAST((
+SELECT ISNULL (CAST((
 SELECT * FROM Sentence WHERE SentenceId in (
 SELECT
 	[SentenceId]
@@ -458,7 +461,7 @@ FROM
 	[Video]
 WHERE
 	[PersonId]=@PersonId)
-FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
+FOR JSON PATH) AS NVARCHAR(MAX)),'[{}]')  AS JsonResult
 GO
 
 CREATE OR ALTER PROCEDURE web.get_videosbysentence
@@ -499,15 +502,17 @@ WHERE
 FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
 GO
 
+
 CREATE OR ALTER PROCEDURE web.get_sentencesbycount
 AS
 SET NOCOUNT ON;
-DECLARE @threshold INT = 3;
+DECLARE @threshold INT = 100;
 SELECT CAST(( 
 
 SELECT
 	[SentenceId],
-	[SentenceText]
+	[SentenceText],
+	[Importance]
 FROM
 	[Sentence]
 WHERE 
@@ -522,7 +527,6 @@ NOT IN (
 	HAVING
 		COUNT(*) >= @threshold
 )
-
 
 FOR JSON PATH) AS NVARCHAR(MAX)) AS JsonResult
 GO
